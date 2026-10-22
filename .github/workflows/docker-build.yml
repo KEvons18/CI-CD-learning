@@ -1,0 +1,23 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Build the Docker image
+        run: docker build -t my-first-image .
+
+      - name: Test the container
+        run: |
+          docker run -d --name test-site -p 8080:80 my-first-image
+          sleep 3
+          curl --fail localhost:8080 | grep "Hello from my CI/CD repo"
