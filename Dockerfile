@@ -1,2 +1,2 @@
 FROM nginx
-RUN echo "Goodbye" > /usr/share/nginx/html/index.html
+RUN echo "Hello from my CI/CD repo" > /usr/share/nginx/html/index.html
