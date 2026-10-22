@@ -1,4 +1,4 @@
-name: Docker Build
+name: Docker Build and Push
 
 on:
   push:
@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
@@ -21,3 +29,25 @@ jobs:
           docker run -d --name test-site -p 8080:80 my-first-image
           sleep 3
           curl --fail localhost:8080 | grep "Hello from my CI/CD repo"
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag the image
+        if: github.event_name == 'push'
+        run: |
+          IMAGE=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          docker tag my-first-image $IMAGE:latest
+          docker tag my-first-image $IMAGE:${{ github.sha }}
+
+      - name: Push the image
+        if: github.event_name == 'push'
+        run: |
+          IMAGE=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          docker push $IMAGE:latest
+          docker push $IMAGE:${{ github.sha }}
